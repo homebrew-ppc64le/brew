@@ -6,8 +6,8 @@ module Hardware
   class CPU
     INTEL_32BIT_ARCHS = [:i386].freeze
     INTEL_64BIT_ARCHS = [:x86_64].freeze
-    PPC_32BIT_ARCHS   = [:ppc, :ppc32, :ppc7400, :ppc7450, :ppc970].freeze
-    PPC_64BIT_ARCHS   = [:ppc64].freeze
+    PPC_32BIT_ARCHS   = [:ppc, :ppc32, :ppc7400, :ppc7450].freeze
+    PPC_64BIT_ARCHS   = [:ppc64, :ppc64le, :ppc970].freeze
 
     class << self
       OPTIMIZATION_FLAGS = {
@@ -17,10 +17,13 @@ module Hardware
         core:    "-march=prescott",
         armv6:   "-march=armv6",
         armv8:   "-march=armv8-a",
+        ppc:     "-mcpu=native -mtune=native",
       }.freeze
 
       def optimization_flags
-        OPTIMIZATION_FLAGS
+        OPTIMIZATION_FLAGS_LINUX.tap do |flags|
+          flags[:native] = "-mcpu=native -mtune=native" if ppc64le?
+        end
       end
 
       def arch_32_bit
@@ -40,7 +43,9 @@ module Hardware
           :arm64
         elsif intel?
           :x86_64
-        elsif ppc?
+        elsif ppc64le?
+          :ppc64le
+        elsif ppc64?
           :ppc64
         else
           :dunno
@@ -66,6 +71,8 @@ module Hardware
         case RUBY_PLATFORM
         when /x86_64/, /i\d86/ then :intel
         when /arm/, /aarch64/ then :arm
+        when /ppc64le/, /powerpc64le/ then :ppc64le
+        when /ppc64/, /powerpc64le/ then :ppc64
         when /ppc\d+/ then :ppc
         else :dunno
         end
@@ -85,7 +92,7 @@ module Hardware
 
       def bits
         @bits ||= case RUBY_PLATFORM
-        when /x86_64/, /ppc64/, /aarch64|arm64/ then 64
+        when /x86_64/, /ppc64|powerpc64/, /aarch64|arm64/ then 64
         when /i\d86/, /ppc/, /arm/ then 32
         end
       end
@@ -108,6 +115,14 @@ module Hardware
 
       def ppc?
         type == :ppc
+      end
+
+      def ppc64le?
+        type == :ppc64le
+      end
+
+      def ppc64?
+        type == :ppc64
       end
 
       def arm?

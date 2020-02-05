@@ -74,11 +74,11 @@ module Homebrew
       end
 
       def check_supported_architecture
-        return if Hardware::CPU.arch == :x86_64
+        return if [:x86_64, :ppc64le].include?(Hardware::CPU.arch)
 
         <<~EOS
           Your CPU architecture (#{Hardware::CPU.arch}) is not supported. We only support
-          x86_64 CPU architectures. You will be unable to use binary packages (bottles).
+          x86_64 & ppc64le CPU architectures. You will be unable to use binary packages (bottles).
           #{please_create_pull_requests}
         EOS
       end

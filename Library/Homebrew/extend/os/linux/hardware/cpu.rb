@@ -10,10 +10,13 @@ module Hardware
         core:    "-march=prescott",
         armv6:   "-march=armv6",
         armv8:   "-march=armv8-a",
-      }.freeze
+        ppc:     "-mcpu=native -mtune=native",
+      }
 
       def optimization_flags
-        OPTIMIZATION_FLAGS_LINUX
+        OPTIMIZATION_FLAGS_LINUX.tap do |flags|
+          flags[:native] = "-mcpu=native -mtune=native" if ppc64le?
+        end
       end
 
       def cpuinfo
@@ -23,6 +26,8 @@ module Hardware
       def family
         return :arm if arm?
         return :ppc if ppc?
+        return :ppc64 if ppc64?
+        return :ppc64le if ppc64le?
         return :dunno unless intel?
 
         # See https://software.intel.com/en-us/articles/intel-architecture-and-processor-identification-with-cpuid-model-and-family-numbers

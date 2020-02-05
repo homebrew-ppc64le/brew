@@ -10,8 +10,8 @@ module Homebrew
     module_function
 
     def check_cpu
-      case Hardware::CPU.type
-      when :ppc
+      case Hardware::CPU.arch
+      when :ppc32, :ppc64
         abort <<~EOS
           Sorry, Homebrew does not support your computer's CPU architecture.
           For PPC support, see:
