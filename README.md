@@ -1,3 +1,5 @@
+![](./logo.png)
+
 # Homebrew for Linux ppc64le
 [![GitHub release](https://img.shields.io/github/release/Homebrew/brew.svg)](https://github.com/homebrew-ppc64le/brew/releases)
 
