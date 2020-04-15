@@ -2,7 +2,7 @@
 
 
 # Homebrew for Linux ppc64le
-[![GitHub release](https://img.shields.io/github/release/Homebrew/brew.svg)](https://github.com/homebrew-ppc64le/brew/releases)
+[![GitHub release](https://img.shields.io/github/release/homebrew-ppc64le/brew.svg)](https://github.com/homebrew-ppc64le/brew/releases)
 
 This is a fork of Homebrew with additional support for Linux ppc64le. Let's hope one day the userbase of PPC64LE is significant enough to
 convince Homebrew team to support Linux ppc64le officially.
