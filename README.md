@@ -1,5 +1,8 @@
-# Homebrew
-[![GitHub release](https://img.shields.io/github/release/Homebrew/brew.svg)](https://github.com/Homebrew/brew/releases)
+# Homebrew for Linux ppc64le
+[![GitHub release](https://img.shields.io/github/release/Homebrew/brew.svg)](https://github.com/homebrew-ppc64le/brew/releases)
+
+This is a fork of Homebrew with additional support for Linux ppc64le. Let's hope one day the userbase of PPC64LE is significant enough to
+convince Homebrew team to support Linux ppc64le officially.
 
 Features, usage and installation instructions are [summarised on the homepage](https://brew.sh). Terminology (e.g. the difference between a Cellar, Tap, Cask and so forth) is [explained here](https://docs.brew.sh/Formula-Cookbook#homebrew-terminology).
 
@@ -57,6 +60,8 @@ Homebrew's [Project Leadership Committee](https://docs.brew.sh/Homebrew-Governan
 Homebrew's [Technical Steering Committee](https://docs.brew.sh/Homebrew-Governance#7-technical-steering-committee) is [Michka Popoff](https://github.com/imichka), [FX Coudert](https://github.com/fxcoudert), [Markus Reiter](https://github.com/reitermarkus), [Misty De Meo](https://github.com/mistydemeo) and [Mike McQuaid](https://github.com/MikeMcQuaid).
 
 Homebrew/brew's Linux maintainers are [Michka Popoff](https://github.com/imichka), [Shaun Jackman](https://github.com/sjackman), [Dawid Dziurla](https://github.com/dawidd6) and [Issy Long](https://github.com/issyl0).
+
+Homebrew/brew's Linux PPC64LE maintainers are [Trung Lê](https://github.com/runlevel5)
 
 Homebrew's other current maintainers are [Claudia Pellegrino](https://github.com/claui), [Zach Auten](https://github.com/zachauten), [Rui Chen](https://github.com/chenrui333), [Vitor Galvao](https://github.com/vitorgalvao), [Caleb Xu](https://github.com/alebcay), [Gautham Goli](https://github.com/GauthamGoli), [Steven Peters](https://github.com/scpeters), [Bo Anderson](https://github.com/Bo98), [William Woodruff](https://github.com/woodruffw), [Igor Kapkov](https://github.com/igas), [Sam Ford](https://github.com/samford), [Alexander Bayandin](https://github.com/bayandin), [Izaak Beekman](https://github.com/zbeekman), [Eric Knibbe](https://github.com/EricFromCanada), [Viktor Szakats](https://github.com/vszakats), [Thierry Moisan](https://github.com/moisan), [Steven Peters](https://github.com/scpeters), [Tom Schoonjans](https://github.com/tschoonj) and [Issy Long](https://github.com/issyl0).
 
