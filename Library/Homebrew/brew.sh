@@ -378,7 +378,12 @@ then
   export HOMEBREW_BOTTLE_DOMAIN="$HOMEBREW_BOTTLE_DEFAULT_DOMAIN"
 fi
 
-export HOMEBREW_BREW_DEFAULT_GIT_REMOTE="https://github.com/Homebrew/brew"
+HOMEBREW_BREW_DEFAULT_GIT_REMOTE="https://github.com/Homebrew/brew"
+if [[ -n "$HOMEBREW_LINUX" ]] || [[ "$HOMEBREW_PROCESSOR" = "ppc64le" ]]
+then
+  HOMEBREW_BREW_DEFAULT_GIT_REMOTE="https://github.com/homebrew-ppc64le/brew"
+fi
+
 if [[ -z "$HOMEBREW_BREW_GIT_REMOTE" ]]
 then
   HOMEBREW_BREW_GIT_REMOTE="$HOMEBREW_BREW_DEFAULT_GIT_REMOTE"
@@ -389,7 +394,12 @@ if [[ -n "$HOMEBREW_MACOS" ]] || [[ -n "$HOMEBREW_FORCE_HOMEBREW_ON_LINUX" ]]
 then
   HOMEBREW_CORE_DEFAULT_GIT_REMOTE="https://github.com/Homebrew/homebrew-core"
 else
-  HOMEBREW_CORE_DEFAULT_GIT_REMOTE="https://github.com/Homebrew/linuxbrew-core"
+  if [[ "$HOMEBREW_PROCESSOR" = "ppc64le" ]]
+  then
+    HOMEBREW_CORE_DEFAULT_GIT_REMOTE="https://github.com/homebrew-ppc64le/homebrew-core"
+  else
+    HOMEBREW_CORE_DEFAULT_GIT_REMOTE="https://github.com/Homebrew/linuxbrew-core"
+  fi
 fi
 export HOMEBREW_CORE_DEFAULT_GIT_REMOTE
 

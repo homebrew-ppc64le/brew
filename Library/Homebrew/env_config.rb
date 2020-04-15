@@ -57,7 +57,8 @@ module Homebrew
       HOMEBREW_CORE_GIT_REMOTE:           {
         description:  "Use the specified URL as the Homebrew/homebrew-core `git`(1) remote.",
         default_text: "macOS: `https://github.com/Homebrew/homebrew-core`, " \
-                      "Linux: `https://github.com/Homebrew/linuxbrew-core`.",
+                      "Linux: `https://github.com/Homebrew/linuxbrew-core`, " \
+                      "Linux PPC64LE: `https://github.com/homebrew-ppc64le/homebrew-core`.",
         default:      HOMEBREW_CORE_DEFAULT_GIT_REMOTE,
       },
       HOMEBREW_CURLRC:                    {
