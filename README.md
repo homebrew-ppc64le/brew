@@ -1,4 +1,5 @@
-![](./logo.png)
+<img src="https://raw.githubusercontent.com/homebrew-ppc64le/brew/master/logo.png" width="72">
+
 
 # Homebrew for Linux ppc64le
 [![GitHub release](https://img.shields.io/github/release/Homebrew/brew.svg)](https://github.com/homebrew-ppc64le/brew/releases)
