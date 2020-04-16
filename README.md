@@ -90,7 +90,7 @@ Our Jenkins CI installation is hosted by [DigitalOcean](https://m.do.co/c/7e39c3
 
 Our bottles (binary packages) are hosted by [Bintray](https://bintray.com/homebrew).
 
-[![Downloads by Bintray](https://bintray.com/docs/images/downloads_by_bintray_96.png)](https://bintray.com/homebrew)
+[![Downloads by Bintray](https://bintray.com/docs/images/downloads_by_bintray_96.png)](https://bintray.com/homebrew-ppc64le)
 
 Secure password storage and syncing is provided by [1Password for Teams](https://1password.com/teams/) by [AgileBits](https://agilebits.com).
 
