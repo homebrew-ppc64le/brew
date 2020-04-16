@@ -191,7 +191,12 @@ if [[ -n "$HOMEBREW_MACOS" || -n "$HOMEBREW_FORCE_HOMEBREW_ON_LINUX" ]]
 then
   HOMEBREW_BOTTLE_DEFAULT_DOMAIN="https://homebrew.bintray.com"
 else
-  HOMEBREW_BOTTLE_DEFAULT_DOMAIN="https://linuxbrew.bintray.com"
+  if [[ "$HOMEBREW_PROCESSOR" = "ppc64le" ]]
+  then
+    HOMEBREW_BOTTLE_DEFAULT_DOMAIN="https://dl.bintray.com/homebrew-ppc64le"
+  else
+    HOMEBREW_BOTTLE_DEFAULT_DOMAIN="https://linuxbrew.bintray.com"
+  fi
 fi
 
 HOMEBREW_CACHE="${HOMEBREW_CACHE:-${HOMEBREW_DEFAULT_CACHE}}"
