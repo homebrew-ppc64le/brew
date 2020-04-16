@@ -17,7 +17,7 @@ module Hardware
         core:    "-march=prescott",
         armv6:   "-march=armv6",
         armv8:   "-march=armv8-a",
-        ppc:     "-mcpu=native -mtune=native",
+        ppc64le: "-mcpu=native -mtune=native",
       }.freeze
 
       def optimization_flags
