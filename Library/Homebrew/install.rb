@@ -17,6 +17,10 @@ module Homebrew
           For PowerPC Macs (PPC32/PPC64BE) support, see:
             #{Formatter.url("https://github.com/mistydemeo/tigerbrew")}
         EOS
+      when OS.linux? && Hardware::CPU.ppc64?
+        abort <<~EOS
+          Sorry, Homebrew does not support PPC64BE yet
+        EOS
       end
     end
 
