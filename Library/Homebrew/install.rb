@@ -10,11 +10,11 @@ module Homebrew
     module_function
 
     def check_cpu
-      case Hardware::CPU.arch
-      when :ppc32, :ppc64
+      case
+      when OS.mac? && Hardware::CPU.ppc?
         abort <<~EOS
           Sorry, Homebrew does not support your computer's CPU architecture.
-          For PPC support, see:
+          For PowerPC Macs (PPC32/PPC64BE) support, see:
             #{Formatter.url("https://github.com/mistydemeo/tigerbrew")}
         EOS
       end
