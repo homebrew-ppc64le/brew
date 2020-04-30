@@ -4,18 +4,22 @@ module Hardware
   class CPU
     class << self
       OPTIMIZATION_FLAGS_LINUX = {
-        native:  "-march=#{Homebrew::EnvConfig.arch}",
         nehalem: "-march=nehalem",
         core2:   "-march=core2",
         core:    "-march=prescott",
         armv6:   "-march=armv6",
         armv8:   "-march=armv8-a",
-        ppc64le: "-mcpu=native -mtune=native",
+        ppc64:   "-mcpu=powerpc64",
+        ppc64le: "-mcpu=powerpc64le",
       }
 
       def optimization_flags
         OPTIMIZATION_FLAGS_LINUX.tap do |flags|
-          flags[:native] = "-mcpu=native -mtune=native" if ppc64le?
+          if ppc?
+            flags[:native] = "-mcpu=#{Homebrew::EnvConfig.arch}"
+          else
+            flags[:native] = "-march=#{Homebrew::EnvConfig.arch}"
+          end
         end
       end
 
@@ -26,8 +30,6 @@ module Hardware
       def family
         return :arm if arm?
         return :ppc if ppc?
-        return :ppc64 if ppc64?
-        return :ppc64le if ppc64le?
         return :dunno unless intel?
 
         # See https://software.intel.com/en-us/articles/intel-architecture-and-processor-identification-with-cpuid-model-and-family-numbers

@@ -6,23 +6,27 @@ module Hardware
   class CPU
     INTEL_32BIT_ARCHS = [:i386].freeze
     INTEL_64BIT_ARCHS = [:x86_64].freeze
-    PPC_32BIT_ARCHS   = [:ppc, :ppc32, :ppc7400, :ppc7450].freeze
+    PPC_32BIT_ARCHS   = [:ppc, :ppc32, :ppc7400, :ppc7450, :ppc970].freeze
     PPC_64BIT_ARCHS   = [:ppc64, :ppc64le, :ppc970].freeze
 
     class << self
       OPTIMIZATION_FLAGS = {
-        native:  "-march=native",
         nehalem: "-march=nehalem",
         core2:   "-march=core2",
         core:    "-march=prescott",
         armv6:   "-march=armv6",
         armv8:   "-march=armv8-a",
-        ppc64le: "-mcpu=native -mtune=native",
+        ppc64:   "-mcpu=powerpc64",
+        ppc64le: "-mcpu=powerpc64le",
       }.freeze
 
       def optimization_flags
         OPTIMIZATION_FLAGS_LINUX.tap do |flags|
-          flags[:native] = "-mcpu=native -mtune=native" if ppc64le?
+          if ppc64le?
+            flags[:native] = "-mcpu=native"
+          else
+            flags[:native] = "-march=native"
+          end
         end
       end
 
@@ -31,8 +35,8 @@ module Hardware
           :arm
         elsif intel?
           :i386
-        elsif ppc?
-          :ppc32
+        elsif ppc32?
+          :ppc
         else
           :dunno
         end
@@ -71,8 +75,6 @@ module Hardware
         case RUBY_PLATFORM
         when /x86_64/, /i\d86/ then :intel
         when /arm/, /aarch64/ then :arm
-        when /ppc64le/, /powerpc64le/ then :ppc64le
-        when /ppc64/, /powerpc64le/ then :ppc64
         when /ppc\d+/ then :ppc
         else :dunno
         end
@@ -117,16 +119,28 @@ module Hardware
         type == :ppc
       end
 
+      def ppc32?
+        ppc? && is_32_bit?
+      end
+
       def ppc64le?
-        type == :ppc64le
+        ppc? && is_64_bit? && little_endian?
       end
 
       def ppc64?
-        type == :ppc64
+        ppc? && is_64_bit? && big_endian?
       end
 
       def arm?
         type == :arm
+      end
+
+      def little_endian?
+        !big_endian?
+      end
+
+      def big_endian?
+        [1].pack("I") == [1].pack("N")
       end
 
       def features
