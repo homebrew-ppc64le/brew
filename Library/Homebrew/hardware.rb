@@ -75,7 +75,7 @@ module Hardware
         case RUBY_PLATFORM
         when /x86_64/, /i\d86/ then :intel
         when /arm/, /aarch64/ then :arm
-        when /ppc\d+/ then :ppc
+        when /ppc|powerpc/ then :ppc
         else :dunno
         end
       end
