@@ -21,8 +21,8 @@ module Hardware
       }.freeze
 
       def optimization_flags
-        OPTIMIZATION_FLAGS_LINUX.tap do |flags|
-          flags[:native] = if ppc64le?
+        OPTIMIZATION_FLAGS.tap do |flags|
+          flags[:native] = if ppc?
             "-mcpu=native"
           else
             "-march=native"
