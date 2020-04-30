@@ -11,7 +11,7 @@ module Hardware
 
     class << self
       def optimization_flags
-        {
+        @optimization_flags ||= {
           native:  arch_flag("native"),
           nehalem: "-march=nehalem",
           core2:   "-march=core2",
@@ -20,8 +20,9 @@ module Hardware
           armv8:   "-march=armv8-a",
           ppc64:   "-mcpu=powerpc64",
           ppc64le: "-mcpu=powerpc64le",
-        }
+        }.freeze
       end
+      alias generic_optimization_flags optimization_flags
 
       def arch_32_bit
         if arm?

@@ -4,16 +4,11 @@ module Hardware
   class CPU
     class << self
       def optimization_flags
-        {
-          native:  arch_flag(Homebrew::EnvConfig.arch),
-          nehalem: "-march=nehalem",
-          core2:   "-march=core2",
-          core:    "-march=prescott",
-          armv6:   "-march=armv6",
-          armv8:   "-march=armv8-a",
-          ppc64:   "-mcpu=powerpc64",
-          ppc64le: "-mcpu=powerpc64le",
-        }
+        @optimization_flags ||= begin
+          flags = generic_optimization_flags.dup
+          flags[:native] = arch_flag(Homebrew::EnvConfig.arch)
+          flags
+        end
       end
 
       def cpuinfo
