@@ -3,24 +3,17 @@
 module Hardware
   class CPU
     class << self
-      OPTIMIZATION_FLAGS_LINUX = {
-        nehalem: "-march=nehalem",
-        core2:   "-march=core2",
-        core:    "-march=prescott",
-        armv6:   "-march=armv6",
-        armv8:   "-march=armv8-a",
-        ppc64:   "-mcpu=powerpc64",
-        ppc64le: "-mcpu=powerpc64le",
-      }.freeze
-
       def optimization_flags
-        OPTIMIZATION_FLAGS_LINUX.tap do |flags|
-          flags[:native] = if ppc?
-            "-mcpu=#{Homebrew::EnvConfig.arch}"
-          else
-            "-march=#{Homebrew::EnvConfig.arch}"
-          end
-        end
+        {
+          native:  arch_flag(Homebrew::EnvConfig.arch),
+          nehalem: "-march=nehalem",
+          core2:   "-march=core2",
+          core:    "-march=prescott",
+          armv6:   "-march=armv6",
+          armv8:   "-march=armv8-a",
+          ppc64:   "-mcpu=powerpc64",
+          ppc64le: "-mcpu=powerpc64le",
+        }
       end
 
       def cpuinfo

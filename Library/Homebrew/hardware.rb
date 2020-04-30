@@ -10,24 +10,17 @@ module Hardware
     PPC_64BIT_ARCHS   = [:ppc64, :ppc64le, :ppc970].freeze
 
     class << self
-      OPTIMIZATION_FLAGS = {
-        nehalem: "-march=nehalem",
-        core2:   "-march=core2",
-        core:    "-march=prescott",
-        armv6:   "-march=armv6",
-        armv8:   "-march=armv8-a",
-        ppc64:   "-mcpu=powerpc64",
-        ppc64le: "-mcpu=powerpc64le",
-      }.freeze
-
       def optimization_flags
-        OPTIMIZATION_FLAGS.tap do |flags|
-          flags[:native] = if ppc?
-            "-mcpu=native"
-          else
-            "-march=native"
-          end
-        end
+        {
+          native:  arch_flag("native"),
+          nehalem: "-march=nehalem",
+          core2:   "-march=core2",
+          core:    "-march=prescott",
+          armv6:   "-march=armv6",
+          armv8:   "-march=armv8-a",
+          ppc64:   "-mcpu=powerpc64",
+          ppc64le: "-mcpu=powerpc64le",
+        }
       end
 
       def arch_32_bit
@@ -36,7 +29,7 @@ module Hardware
         elsif intel?
           :i386
         elsif ppc32?
-          :ppc
+          :ppc32
         else
           :dunno
         end
@@ -149,6 +142,12 @@ module Hardware
 
       def feature?(name)
         features.include?(name)
+      end
+
+      def arch_flag(arch)
+        return "-mcpu=#{arch}" if ppc?
+
+        "-march=#{arch}"
       end
     end
   end
