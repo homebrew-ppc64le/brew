@@ -22,21 +22,18 @@ module Homebrew
       switch :quiet
       switch :verbose
       switch :debug
-      max_named 1
+      named :formula
     end
   end
 
   def bump_revision
     bump_revision_args.parse
 
-    # As this command is simplifying user run commands then let's just use a
+    # As this command is simplifying user-run commands then let's just use a
     # user path, too.
     ENV["PATH"] = ENV["HOMEBREW_PATH"]
 
-    formulae = args.formulae
-    raise FormulaUnspecifiedError if formulae.empty?
-
-    formula = formulae.first
+    formula = args.formulae.first
     current_revision = formula.revision
 
     if current_revision.zero?
@@ -45,7 +42,12 @@ module Homebrew
         [checksum.hash_type, checksum.hexdigest]
       end
 
-      old = if hash_type
+      old = if formula.path.read.include?("stable do\n")
+        # insert replacement revision after homepage
+        <<~EOS
+          homepage "#{formula.homepage}"
+        EOS
+      elsif hash_type
         # insert replacement revision after hash
         <<~EOS
           #{hash_type} "#{old_hash}"

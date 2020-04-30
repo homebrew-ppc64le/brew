@@ -20,15 +20,15 @@ begin
   error_pipe = UNIXSocket.open(ENV["HOMEBREW_ERROR_PIPE"], &:recv_io)
   error_pipe.fcntl(Fcntl::F_SETFD, Fcntl::FD_CLOEXEC)
 
-  ENV.extend(Stdenv)
-  ENV.setup_build_environment
-
   trap("INT", old_trap)
 
   formula = Homebrew.args.resolved_formulae.first
   formula.extend(Homebrew::Assertions)
   formula.extend(Homebrew::FreePort)
   formula.extend(Debrew::Formula) if Homebrew.args.debug?
+
+  ENV.extend(Stdenv)
+  ENV.setup_build_environment(formula)
 
   # tests can also return false to indicate failure
   Timeout.timeout TEST_TIMEOUT_SECONDS do
@@ -37,6 +37,7 @@ begin
 rescue Exception => e # rubocop:disable Lint/RescueException
   error_pipe.puts e.to_json
   error_pipe.close
+ensure
   pid = Process.pid.to_s
   if which("pgrep") && which("pkill") && system("pgrep", "-P", pid, out: :close)
     $stderr.puts "Killing child processes..."
@@ -44,5 +45,5 @@ rescue Exception => e # rubocop:disable Lint/RescueException
     sleep 1
     system "pkill", "-9", "-P", pid
   end
-  exit! 1
+  exit! 1 if e
 end
