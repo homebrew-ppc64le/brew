@@ -15,6 +15,14 @@ module Homebrew
       "/system/bin/linker",
     ].freeze
 
+    def check_cpu
+      return unless Hardware::CPU.ppc64?
+
+      abort <<~EOS
+        Sorry, Homebrew only support PPC64LE
+      EOS
+    end
+
     def symlink_ld_so
       brew_ld_so = HOMEBREW_PREFIX/"lib/ld.so"
       return if brew_ld_so.readable?
