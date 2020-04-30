@@ -11,14 +11,14 @@ module Hardware
         armv8:   "-march=armv8-a",
         ppc64:   "-mcpu=powerpc64",
         ppc64le: "-mcpu=powerpc64le",
-      }
+      }.freeze
 
       def optimization_flags
         OPTIMIZATION_FLAGS_LINUX.tap do |flags|
-          if ppc?
-            flags[:native] = "-mcpu=#{Homebrew::EnvConfig.arch}"
+          flags[:native] = if ppc?
+            "-mcpu=#{Homebrew::EnvConfig.arch}"
           else
-            flags[:native] = "-march=#{Homebrew::EnvConfig.arch}"
+            "-march=#{Homebrew::EnvConfig.arch}"
           end
         end
       end

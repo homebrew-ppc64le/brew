@@ -22,10 +22,10 @@ module Hardware
 
       def optimization_flags
         OPTIMIZATION_FLAGS_LINUX.tap do |flags|
-          if ppc64le?
-            flags[:native] = "-mcpu=native"
+          flags[:native] = if ppc64le?
+            "-mcpu=native"
           else
-            flags[:native] = "-march=native"
+            "-march=native"
           end
         end
       end

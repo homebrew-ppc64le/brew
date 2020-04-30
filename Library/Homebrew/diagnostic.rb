@@ -660,7 +660,7 @@ module Homebrew
         message = nil
 
         {
-          "homebrew-ppc64le/brew" => HOMEBREW_REPOSITORY,
+          "homebrew-ppc64le/brew"  => HOMEBREW_REPOSITORY,
           "Homebrew/homebrew-core" => CoreTap.instance.path,
         }.each do |name, path|
           status = path.cd do
