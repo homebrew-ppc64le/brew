@@ -13,10 +13,6 @@ module OS
     RbConfig::CONFIG["host_os"].include? "linux"
   end
 
-  def self.linux_ppc64le?
-    linux? && RbConfig::CONFIG["host_cpu"] == "powerpc64le"
-  end
-
   ::OS_VERSION = ENV["HOMEBREW_OS_VERSION"]
 
   if OS.mac?
