@@ -40,9 +40,9 @@ then
       ruby_SHA="78e36e4671fd08790bfbfda4408d559341c9872bf48a4f6eab78157a3bf3efa6"
       ;;
     ppc64le)
-      ruby_URL="$HOMEBREW_BOTTLE_DOMAIN/bottles-portable-ruby/portable-ruby-2.6.3.ppc64le_glibc_2.17_linux.bottle.tar.gz"
-      ruby_URL2="https://github.com/homebrew-ppc64le/homebrew-portable-ruby/releases/download/2.6.3/portable-ruby-2.6.3.ppc64le_glibc_2.17_linux.bottle.tar.gz"
-      ruby_SHA="302622be7c52fc638585179932e63d75b6f8247f66f2ebc02aa03960b9c6eacc"
+      ruby_URL="$HOMEBREW_BOTTLE_DOMAIN/bottles-portable-ruby/portable-ruby-2.6.3.ppc64le_linux.bottle.tar.gz"
+      ruby_URL2="https://github.com/homebrew-ppc64le/homebrew-portable-ruby/releases/download/2.6.3/portable-ruby-2.6.3.ppc64le_linux.bottle.tar.gz"
+      ruby_SHA="79158e28f216f797e2c51131d3cd395aaa984cd0df49ff1afa36d1ccb1e551a4"
       ;;
   esac
 fi
