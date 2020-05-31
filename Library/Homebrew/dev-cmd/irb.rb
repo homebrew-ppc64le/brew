@@ -18,7 +18,8 @@ module Homebrew
   module_function
 
   def irb_args
-    Homebrew::CLI::Parser.new do
+    # work around IRB modifying ARGV.
+    Homebrew::CLI::Parser.new(ARGV.dup.freeze) do
       usage_banner <<~EOS
         `irb` [<options>]
 
@@ -33,12 +34,11 @@ module Homebrew
   end
 
   def irb
-    # work around IRB modifying ARGV.
-    irb_args.parse(ARGV.dup)
+    irb_args.parse
 
     if args.examples?
       puts "'v8'.f # => instance of the v8 formula"
-      puts ":hub.f.installed?"
+      puts ":hub.f.latest_version_installed?"
       puts ":lua.f.methods - 1.methods"
       puts ":mpd.f.recursive_dependencies.reject(&:installed?)"
       return

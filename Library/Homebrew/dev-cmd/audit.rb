@@ -3,6 +3,7 @@
 require "formula"
 require "formula_versions"
 require "utils/curl"
+require "utils/notability"
 require "extend/ENV"
 require "formula_cellar_checks"
 require "cmd/search"
@@ -134,19 +135,8 @@ module Homebrew
       end
     end
 
-    created_pr_comment = false
-    if new_formula && !new_formula_problem_lines.empty?
-      begin
-        created_pr_comment = true if GitHub.create_issue_comment(new_formula_problem_lines.join("\n"))
-      rescue *GitHub.api_errors => e
-        opoo "Unable to create issue comment: #{e.message}"
-      end
-    end
-
-    unless created_pr_comment
-      new_formula_problem_count += new_formula_problem_lines.size
-      puts new_formula_problem_lines.map { |s| "  #{s}" }
-    end
+    new_formula_problem_count += new_formula_problem_lines.size
+    puts new_formula_problem_lines.map { |s| "  #{s}" }
 
     total_problems_count = problem_count + new_formula_problem_count
     problem_plural = "#{total_problems_count} #{"problem".pluralize(total_problems_count)}"
@@ -155,10 +145,7 @@ module Homebrew
     errors_summary = "#{problem_plural} in #{formula_plural} detected"
     errors_summary += ", #{corrected_problem_plural} corrected" if corrected_problem_count.positive?
 
-    if problem_count.positive? ||
-       (new_formula_problem_count.positive? && !created_pr_comment)
-      ofail errors_summary
-    end
+    ofail errors_summary if problem_count.positive? || new_formula_problem_count.positive?
   end
 
   def format_problem_lines(problems)
@@ -435,40 +422,6 @@ module Homebrew
       end
     end
 
-    def audit_keg_only
-      return unless formula.keg_only?
-
-      whitelist = %w[
-        Apple
-        macOS
-        OS
-        Homebrew
-        Xcode
-        GPG
-        GNOME
-        BSD
-        Firefox
-      ].freeze
-
-      reason = formula.keg_only_reason.to_s
-      # Formulae names can legitimately be uppercase/lowercase/both.
-      name = Regexp.new(formula.name, Regexp::IGNORECASE)
-      reason.sub!(name, "")
-      first_word = reason.split.first
-
-      if reason =~ /\A[A-Z]/ && !reason.start_with?(*whitelist)
-        # TODO: check could be in RuboCop
-        problem <<~EOS
-          '#{first_word}' from the keg_only reason should be '#{first_word.downcase}'.
-        EOS
-      end
-
-      return unless reason.end_with?(".")
-
-      # TODO: check could be in RuboCop
-      problem "keg_only reason should not end with a period."
-    end
-
     def audit_postgresql
       return unless formula.name == "postgresql"
       return unless @core_tap
@@ -558,79 +511,30 @@ module Homebrew
       user, repo = get_repo_data(%r{https?://github\.com/([^/]+)/([^/]+)/?.*})
       return if user.nil?
 
-      begin
-        metadata = GitHub.repository(user, repo)
-      rescue GitHub::HTTPNotFoundError
-        return
-      end
+      warning = SharedAudits.github(user, repo)
+      return if warning.nil?
 
-      return if metadata.nil?
-
-      new_formula_problem "GitHub fork (not canonical repository)" if metadata["fork"]
-      if (metadata["forks_count"] < 30) && (metadata["subscribers_count"] < 30) &&
-         (metadata["stargazers_count"] < 75)
-        new_formula_problem "GitHub repository not notable enough (<30 forks, <30 watchers and <75 stars)"
-      end
-
-      return if Date.parse(metadata["created_at"]) <= (Date.today - 30)
-
-      new_formula_problem "GitHub repository too new (<30 days old)"
+      new_formula_problem warning
     end
 
     def audit_gitlab_repository
       user, repo = get_repo_data(%r{https?://gitlab\.com/([^/]+)/([^/]+)/?.*})
       return if user.nil?
 
-      out, _, status= curl_output("--request", "GET", "https://gitlab.com/api/v4/projects/#{user}%2F#{repo}")
-      return unless status.success?
+      warning = SharedAudits.gitlab(user, repo)
+      return if warning.nil?
 
-      metadata = JSON.parse(out)
-      return if metadata.nil?
-
-      new_formula_problem "GitLab fork (not canonical repository)" if metadata["fork"]
-      if (metadata["forks_count"] < 30) && (metadata["star_count"] < 75)
-        new_formula_problem "GitLab repository not notable enough (<30 forks and <75 stars)"
-      end
-
-      return if Date.parse(metadata["created_at"]) <= (Date.today - 30)
-
-      new_formula_problem "GitLab repository too new (<30 days old)"
+      new_formula_problem warning
     end
 
     def audit_bitbucket_repository
       user, repo = get_repo_data(%r{https?://bitbucket\.org/([^/]+)/([^/]+)/?.*})
       return if user.nil?
 
-      api_url = "https://api.bitbucket.org/2.0/repositories/#{user}/#{repo}"
-      out, _, status= curl_output("--request", "GET", api_url)
-      return unless status.success?
+      warning = SharedAudits.bitbucket(user, repo)
+      return if warning.nil?
 
-      metadata = JSON.parse(out)
-      return if metadata.nil?
-
-      new_formula_problem "Uses deprecated mercurial support in Bitbucket" if metadata["scm"] == "hg"
-
-      new_formula_problem "Bitbucket fork (not canonical repository)" unless metadata["parent"].nil?
-
-      if Date.parse(metadata["created_on"]) >= (Date.today - 30)
-        new_formula_problem "Bitbucket repository too new (<30 days old)"
-      end
-
-      forks_out, _, forks_status= curl_output("--request", "GET", "#{api_url}/forks")
-      return unless forks_status.success?
-
-      watcher_out, _, watcher_status= curl_output("--request", "GET", "#{api_url}/watchers")
-      return unless watcher_status.success?
-
-      forks_metadata = JSON.parse(forks_out)
-      return if forks_metadata.nil?
-
-      watcher_metadata = JSON.parse(watcher_out)
-      return if watcher_metadata.nil?
-
-      return if (forks_metadata["size"] < 30) && (watcher_metadata["size"] < 75)
-
-      new_formula_problem "Bitbucket repository not notable enough (<30 forks and <75 watchers)"
+      new_formula_problem warning
     end
 
     def get_repo_data(regex)
@@ -642,7 +546,7 @@ module Homebrew
       _, user, repo = *regex.match(formula.homepage) unless user
       return if !user || !repo
 
-      repo.gsub!(/.git$/, "")
+      repo.delete_suffix!(".git")
 
       [user, repo]
     end
@@ -1018,7 +922,7 @@ module Homebrew
       except_audits = @except
 
       methods.map(&:to_s).grep(/^audit_/).each do |audit_method_name|
-        name = audit_method_name.gsub(/^audit_/, "")
+        name = audit_method_name.delete_prefix("audit_")
         if only_audits
           next unless only_audits.include?(name)
         elsif except_audits
@@ -1076,9 +980,6 @@ module Homebrew
     def audit_version
       if version.nil?
         problem "missing version"
-      elsif version.blank?
-        # TODO: check could be in RuboCop
-        problem "version is set to an empty string"
       elsif !version.detected_from_url?
         version_text = version
         version_url = Version.detect(url, specs)
@@ -1086,26 +987,12 @@ module Homebrew
           problem "version #{version_text} is redundant with version scanned from URL"
         end
       end
-
-      # TODO: check could be in RuboCop
-      problem "version #{version} should not have a leading 'v'" if version.to_s.start_with?("v")
-
-      return unless version.to_s.match?(/_\d+$/)
-
-      # TODO: check could be in RuboCop
-      problem "version #{version} should not end with an underline and a number"
     end
 
     def audit_download_strategy
-      if url =~ %r{^(cvs|bzr|hg|fossil)://} || url =~ %r{^(svn)\+http://}
-        # TODO: check could be in RuboCop
-        problem "Use of the #{$&} scheme is deprecated, pass `:using => :#{Regexp.last_match(1)}` instead"
-      end
-
       url_strategy = DownloadStrategyDetector.detect(url)
 
       if using == :git || url_strategy == GitDownloadStrategy
-        # TODO: check could be in RuboCop
         problem "Git should specify :revision when a :tag is specified." if specs[:tag] && !specs[:revision]
       end
 

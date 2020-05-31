@@ -35,12 +35,9 @@ require "env_config"
 
 require "config"
 require "os"
-require "extend/ARGV"
 require "cli/args"
 require "messages"
 require "system_command"
-
-ARGV.extend(HomebrewArgvExtension)
 
 HOMEBREW_PRODUCT = ENV["HOMEBREW_PRODUCT"]
 HOMEBREW_VERSION = ENV["HOMEBREW_VERSION"]
@@ -85,7 +82,7 @@ module Homebrew
     end
 
     def args
-      @args ||= CLI::Args.new
+      @args ||= CLI::Args.new(set_default_args: true)
     end
 
     def messages

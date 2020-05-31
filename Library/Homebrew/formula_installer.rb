@@ -25,6 +25,7 @@ class FormulaInstaller
 
   def self.mode_attr_accessor(*names)
     attr_accessor(*names)
+
     private(*names)
     names.each do |name|
       predicate = "#{name}?"
@@ -38,6 +39,7 @@ class FormulaInstaller
   attr_reader :formula
   attr_accessor :options, :build_bottle
   attr_accessor :installed_as_dependency, :installed_on_request, :link_keg
+
   mode_attr_accessor :show_summary_heading, :show_header
   mode_attr_accessor :build_from_source, :force_bottle, :include_test
   mode_attr_accessor :ignore_deps, :only_deps, :interactive, :git
@@ -49,15 +51,15 @@ class FormulaInstaller
     @show_header = false
     @ignore_deps = false
     @only_deps = false
-    @build_from_source = Homebrew.args.build_from_source
+    @build_from_source = Homebrew.args.build_from_source?
     @build_bottle = false
-    @force_bottle = Homebrew.args.force_bottle
-    @include_test = ARGV.include?("--include-test")
+    @force_bottle = Homebrew.args.force_bottle?
+    @include_test = Homebrew.args.include_test?
     @interactive = false
     @git = false
     @verbose = Homebrew.args.verbose?
     @quiet = Homebrew.args.quiet?
-    @debug = ARGV.debug?
+    @debug = Homebrew.args.debug?
     @installed_as_dependency = false
     @installed_on_request = true
     @options = Options.new
@@ -82,7 +84,7 @@ class FormulaInstaller
     build_flags = Homebrew.args.collect_build_args
     return if build_flags.empty?
 
-    all_bottled = ARGV.formulae.all?(&:bottled?)
+    all_bottled = Homebrew.args.formulae.all?(&:bottled?)
     raise BuildFlagsError.new(build_flags, bottled: all_bottled)
   end
 
@@ -98,7 +100,7 @@ class FormulaInstaller
     return false if !formula.bottled? && !formula.local_bottle_path
     return true  if force_bottle?
     return false if build_from_source? || build_bottle? || interactive?
-    return false if ARGV.cc
+    return false if Homebrew.args.cc
     return false unless options.empty?
     return false if formula.bottle_disabled?
 
@@ -139,7 +141,6 @@ class FormulaInstaller
   def prelude
     Tab.clear_cache
     verify_deps_exist unless ignore_deps?
-    lock
     check_install_sanity
   end
 
@@ -219,6 +220,8 @@ class FormulaInstaller
   end
 
   def install
+    lock
+
     start_time = Time.now
     if !formula.bottle_unneeded? && !pour_bottle? && DevelopmentTools.installed?
       Homebrew::Install.perform_build_from_source_checks
@@ -267,7 +270,7 @@ class FormulaInstaller
 
     return if only_deps?
 
-    if build_bottle? && (arch = ARGV.bottle_arch) && !Hardware::CPU.optimization_flags.include?(arch)
+    if build_bottle? && (arch = Homebrew.args.bottle_arch) && !Hardware::CPU.optimization_flags.include?(arch.to_sym)
       raise "Unrecognized architecture for --bottle-arch: #{arch}"
     end
 
@@ -277,7 +280,7 @@ class FormulaInstaller
       opoo "#{formula.full_name}: #{old_flag} was deprecated; using #{new_flag} instead!"
     end
 
-    options = display_options(formula)
+    options = display_options(formula).join(" ")
     oh1 "Installing #{Formatter.identifier(formula.full_name)} #{options}".strip if show_header?
 
     unless formula.tap&.private?
@@ -451,13 +454,16 @@ class FormulaInstaller
         build = effective_build_options_for(dependent)
         install_bottle_for_dependent = install_bottle_for?(dependent, build)
 
+        keep_build_test = false
+        keep_build_test ||= runtime_requirements.include?(req)
+        keep_build_test ||= req.test? && include_test? && dependent == f
+        keep_build_test ||= req.build? && !install_bottle_for_dependent && !dependent.latest_version_installed?
+
         if req.prune_from_option?(build)
           Requirement.prune
         elsif req.satisfied?
           Requirement.prune
-        elsif include_test? && req.test?
-          next
-        elsif !runtime_requirements.include?(req) && install_bottle_for_dependent
+        elsif (req.build? || req.test?) && !keep_build_test
           Requirement.prune
         elsif (dep = formula_deps_map[dependent.name]) && dep.build?
           Requirement.prune
@@ -484,13 +490,13 @@ class FormulaInstaller
         inherited_options.fetch(dependent.name, []),
       )
 
+      keep_build_test = false
+      keep_build_test ||= dep.test? && include_test? && Homebrew.args.include_formula_test_deps?(dependent)
+      keep_build_test ||= dep.build? && !install_bottle_for?(dependent, build) && !dependent.latest_version_installed?
+
       if dep.prune_from_option?(build)
         Dependency.prune
-      elsif include_test? && dep.test? && !dep.installed?
-        Dependency.keep_but_prune_recursive_deps
-      elsif dep.build? && install_bottle_for?(dependent, build)
-        Dependency.prune
-      elsif dep.prune_if_build_and_not_dependent?(dependent)
+      elsif (dep.build? || dep.test?) && !keep_build_test
         Dependency.prune
       elsif dep.satisfied?(inherited_options[dep.name])
         Dependency.skip
@@ -527,16 +533,15 @@ class FormulaInstaller
   end
 
   def display_options(formula)
-    options = []
-    if formula.head?
-      options << "--HEAD"
+    options = if formula.head?
+      ["--HEAD"]
     elsif formula.devel?
-      options << "--devel"
+      ["--devel"]
+    else
+      []
     end
     options += effective_build_options_for(formula).used_options.to_a
-    return if options.empty?
-
-    options.join(" ")
+    options
   end
 
   def inherited_options_for(dep)
@@ -561,6 +566,23 @@ class FormulaInstaller
     @show_header = true unless deps.empty?
   end
 
+  def fetch_dependency(dep)
+    df = dep.to_formula
+    fi = FormulaInstaller.new(df)
+
+    fi.build_from_source       = Homebrew.args.build_formula_from_source?(df)
+    fi.force_bottle            = false
+    fi.include_test            = Homebrew.args.include_formula_test_deps?(df)
+    fi.verbose                 = verbose?
+    fi.quiet                   = quiet?
+    fi.debug                   = debug?
+    # When fetching we don't need to recurse the dependency tree as it's already
+    # been done for us in `compute_dependencies` and there's no requirement to
+    # fetch in a particular order.
+    fi.ignore_deps             = true
+    fi.fetch
+  end
+
   def install_dependency(dep, inherited_options)
     df = dep.to_formula
     tab = Tab.for_formula(df)
@@ -572,7 +594,7 @@ class FormulaInstaller
       linked_keg.unlink
     end
 
-    if df.installed?
+    if df.latest_version_installed?
       installed_keg = Keg.new(df.prefix)
       tmp_keg = Pathname.new("#{installed_keg}.tmp")
       installed_keg.rename(tmp_keg)
@@ -593,6 +615,7 @@ class FormulaInstaller
     fi.options                &= df.options
     fi.build_from_source       = Homebrew.args.build_formula_from_source?(df)
     fi.force_bottle            = false
+    fi.include_test            = Homebrew.args.include_formula_test_deps?(df)
     fi.verbose                 = verbose?
     fi.quiet                   = quiet?
     fi.debug                   = debug?
@@ -699,19 +722,18 @@ class FormulaInstaller
 
     if build_bottle?
       args << "--build-bottle"
-      args << "--bottle-arch=#{ARGV.bottle_arch}" if ARGV.bottle_arch
+      args << "--bottle-arch=#{Homebrew.args.bottle_arch}" if Homebrew.args.bottle_arch
     end
 
     args << "--git" if git?
     args << "--interactive" if interactive?
     args << "--verbose" if verbose?
     args << "--debug" if debug?
-    args << "--cc=#{ARGV.cc}" if ARGV.cc
-    args << "--default-fortran-flags" if ARGV.include? "--default-fortran-flags"
+    args << "--cc=#{Homebrew.args.cc}" if Homebrew.args.cc
     args << "--keep-tmp" if Homebrew.args.keep_tmp?
 
-    if ARGV.env
-      args << "--env=#{ARGV.env}"
+    if Homebrew.args.env.present?
+      args << "--env=#{Homebrew.args.env}"
     elsif formula.env.std? || formula.deps.select(&:build?).any? { |d| d.name == "scons" }
       args << "--env=std"
     end
@@ -724,7 +746,7 @@ class FormulaInstaller
 
     formula.options.each do |opt|
       name = opt.name[/^([^=]+)=$/, 1]
-      value = ARGV.value(name) if name
+      value = Homebrew.args.value(name) if name
       args << "--#{name}=#{value}" if value
     end
 
@@ -753,7 +775,7 @@ class FormulaInstaller
     ].concat(build_argv)
 
     Utils.safe_fork do
-      if Sandbox.formula?(formula)
+      if Sandbox.available?
         sandbox = Sandbox.new
         formula.logs.mkpath
         sandbox.record_log(formula.logs/"build.sandbox.log")
@@ -776,7 +798,7 @@ class FormulaInstaller
   rescue Exception => e # rubocop:disable Lint/RescueException
     if e.is_a? BuildError
       e.formula = formula
-      e.options = options
+      e.options = display_options(formula)
     end
 
     ignore_interrupts do
@@ -922,7 +944,7 @@ class FormulaInstaller
     ]
 
     Utils.safe_fork do
-      if Sandbox.formula?(formula)
+      if Sandbox.available?
         sandbox = Sandbox.new
         formula.logs.mkpath
         sandbox.record_log(formula.logs/"postinstall.sandbox.log")
@@ -947,14 +969,39 @@ class FormulaInstaller
     @show_summary_heading = true
   end
 
-  def pour
-    if (bottle_path = formula.local_bottle_path)
-      downloader = LocalBottleDownloadStrategy.new(bottle_path)
-    else
-      downloader = formula.bottle
-      downloader.fetch
+  def fetch_dependencies
+    return if ignore_deps?
+
+    deps = compute_dependencies
+    return if deps.empty?
+
+    deps.each { |dep, _options| fetch_dependency(dep) }
+  end
+
+  def fetch
+    fetch_dependencies
+
+    return if only_deps?
+
+    unless pour_bottle?
+      formula.fetch_patches
+      formula.resources.each(&:fetch)
     end
 
+    downloader.fetch
+  end
+
+  def downloader
+    if (bottle_path = formula.local_bottle_path)
+      LocalBottleDownloadStrategy.new(bottle_path)
+    elsif pour_bottle?
+      formula.bottle
+    else
+      formula
+    end
+  end
+
+  def pour
     HOMEBREW_CELLAR.cd do
       downloader.stage
     end

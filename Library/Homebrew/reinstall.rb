@@ -25,7 +25,7 @@ module Homebrew
 
     fi = FormulaInstaller.new(f)
     fi.options              = options
-    fi.build_bottle         = Homebrew.args.build_bottle
+    fi.build_bottle         = Homebrew.args.build_bottle?
     fi.interactive          = Homebrew.args.interactive?
     fi.git                  = Homebrew.args.git?
     fi.link_keg           ||= keg_was_linked if keg_had_linked_opt
@@ -36,6 +36,7 @@ module Homebrew
       fi.installed_on_request    = tab.installed_on_request
     end
     fi.prelude
+    fi.fetch
 
     oh1 "Reinstalling #{Formatter.identifier(f.full_name)} #{options.to_a.join " "}"
 

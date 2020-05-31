@@ -644,25 +644,6 @@ describe Formula do
     expect(f.head.version).to eq(Version.create("HEAD-5658946"))
   end
 
-  specify "legacy options" do
-    f = formula do
-      url "foo-1.0"
-
-      def options
-        [
-          ["--foo", "desc"],
-          ["--bar", "desc"],
-        ]
-      end
-
-      option("baz")
-    end
-
-    expect(f).to have_option_defined("foo")
-    expect(f).to have_option_defined("bar")
-    expect(f).to have_option_defined("baz")
-  end
-
   specify "#desc" do
     f = formula do
       desc "a formula"
@@ -673,29 +654,49 @@ describe Formula do
     expect(f.desc).to eq("a formula")
   end
 
-  specify "#test_defined?" do
-    f1 = formula do
-      url "foo-1.0"
-
-      def test
-        # do nothing
-      end
-    end
-
-    f2 = formula do
-      url "foo-1.0"
-    end
-
-    expect(f1).to have_test_defined
-    expect(f2).not_to have_test_defined
-  end
-
   specify "test fixtures" do
     f1 = formula do
       url "foo-1.0"
     end
 
     expect(f1.test_fixtures("foo")).to eq(Pathname.new("#{HOMEBREW_LIBRARY_PATH}/test/support/fixtures/foo"))
+  end
+
+  specify "#livecheck" do
+    f = formula do
+      url "https://brew.sh/test-1.0.tbz"
+      livecheck do
+        skip "foo"
+        url "https://brew.sh/test/releases"
+        regex(/test-(\d+(?:\.\d+)+)\.tbz/)
+      end
+    end
+
+    expect(f.livecheck.skip?).to be true
+    expect(f.livecheck.skip_msg).to eq("foo")
+    expect(f.livecheck.url).to eq("https://brew.sh/test/releases")
+    expect(f.livecheck.regex).to eq(/test-(\d+(?:\.\d+)+)\.tbz/)
+  end
+
+  describe "#livecheckable?" do
+    specify "no livecheck block defined" do
+      f = formula do
+        url "https://brew.sh/test-1.0.tbz"
+      end
+
+      expect(f.livecheckable?).to be false
+    end
+
+    specify "livecheck block defined" do
+      f = formula do
+        url "https://brew.sh/test-1.0.tbz"
+        livecheck do
+          regex(/test-(\d+(?:.\d+)+).tbz/)
+        end
+      end
+
+      expect(f.livecheckable?).to be true
+    end
   end
 
   specify "dependencies" do

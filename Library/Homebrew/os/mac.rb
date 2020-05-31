@@ -60,9 +60,11 @@ module OS
 
     def languages
       @languages ||= [
-        *ARGV.value("language")&.split(","),
+        *Homebrew.args.value("language")&.split(","),
         *ENV["HOMEBREW_LANGUAGES"]&.split(","),
-        *Open3.capture2("defaults", "read", "-g", "AppleLanguages")[0].scan(/[^ \n"(),]+/),
+        *Open3.capture2("defaults", "read", "-g", "AppleLanguages")
+              .first
+              .scan(/[^ \n"(),]+/),
       ].uniq
     end
 
@@ -166,14 +168,6 @@ module OS
       paths.uniq
     end
 
-    def preferred_arch
-      if Hardware::CPU.is_64_bit?
-        Hardware::CPU.arch_64_bit
-      else
-        Hardware::CPU.arch_32_bit
-      end
-    end
-
     def app_with_bundle_id(*ids)
       path = mdfind(*ids)
              .reject { |p| p.include?("/Backups.backupdb/") }
@@ -195,14 +189,6 @@ module OS
 
     def mdfind_query(*ids)
       ids.map! { |id| "kMDItemCFBundleIdentifier == #{id}" }.join(" || ")
-    end
-
-    def tcc_db
-      @tcc_db ||= Pathname.new("/Library/Application Support/com.apple.TCC/TCC.db")
-    end
-
-    def pre_mavericks_accessibility_dotfile
-      @pre_mavericks_accessibility_dotfile ||= Pathname.new("/private/var/db/.AccessibilityAPIEnabled")
     end
   end
 end

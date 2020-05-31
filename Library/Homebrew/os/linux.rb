@@ -42,11 +42,7 @@ module OS
     end
 
     def languages
-      @languages ||= [
-        *ARGV.value("language")&.split(","),
-        *ENV["HOMEBREW_LANGUAGES"]&.split(","),
-        *ENV["LANG"]&.slice(/[a-z]+/),
-      ].uniq
+      @languages ||= [*ENV["LANG"]&.slice(/[a-z]+/)].uniq
     end
 
     def language
@@ -62,6 +58,14 @@ module OS
     end
 
     module Xcode
+      module_function
+
+      def version
+        Version::NULL
+      end
+    end
+
+    module CLT
       module_function
 
       def version

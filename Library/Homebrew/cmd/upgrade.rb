@@ -183,7 +183,6 @@ module Homebrew
       fi.installed_as_dependency = tab.installed_as_dependency
       fi.installed_on_request  ||= tab.installed_on_request
     end
-    fi.prelude
 
     upgrade_version = if f.optlinked?
       "#{Keg.new(f.opt_prefix).version} -> #{f.pkg_version}"
@@ -191,6 +190,9 @@ module Homebrew
       "-> #{f.pkg_version}"
     end
     oh1 "Upgrading #{Formatter.identifier(f.full_specified_name)} #{upgrade_version} #{fi.options.to_a.join(" ")}"
+
+    fi.prelude
+    fi.fetch
 
     # first we unlink the currently active keg for this formula otherwise it is
     # possible for the existing build to interfere with the build we are about to
@@ -214,7 +216,7 @@ module Homebrew
   ensure
     # restore previous installation state if build failed
     begin
-      linked_kegs.each(&:link) unless f.installed?
+      linked_kegs.each(&:link) unless f.latest_version_installed?
     rescue
       nil
     end

@@ -4,6 +4,7 @@ require "formula"
 require "formula_installer"
 require "keg"
 require "tab"
+require "cmd/install"
 require "test/support/fixtures/testball"
 require "test/support/fixtures/testball_bottle"
 require "test/support/fixtures/failball"
@@ -21,6 +22,7 @@ describe FormulaInstaller do
 
     installer = described_class.new(formula)
 
+    installer.fetch
     installer.install
 
     keg = Keg.new(formula.prefix)
@@ -46,8 +48,6 @@ describe FormulaInstaller do
   end
 
   specify "basic installation" do
-    ARGV << "--with-invalid_flag" # added to ensure it doesn't fail install
-
     temporary_install(Testball.new) do |f|
       # Test that things made it into the Keg
       expect(f.prefix/"readme").to exist
@@ -89,11 +89,8 @@ describe FormulaInstaller do
   end
 
   specify "Formula is not poured from bottle when compiler specified" do
-    expect(ARGV.cc).to be nil
-
-    cc_arg = "--cc=clang"
-    ARGV << cc_arg
-
+    expect(Homebrew.args.cc).to be nil
+    Homebrew.install_args.parse(["--cc=clang", "testball_bottle"])
     temporary_install(TestballBottle.new) do |f|
       tab = Tab.for_formula(f)
       expect(tab.compiler).to eq("clang")
@@ -158,6 +155,7 @@ describe FormulaInstaller do
 
     it "shows audit problems if HOMEBREW_DEVELOPER is set" do
       ENV["HOMEBREW_DEVELOPER"] = "1"
+      formula_installer.fetch
       formula_installer.install
       expect(formula_installer).to receive(:audit_installed).and_call_original
       formula_installer.caveats

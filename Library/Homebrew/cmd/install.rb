@@ -114,13 +114,13 @@ module Homebrew
 
     formulae = []
 
-    unless ARGV.casks.empty?
+    unless Homebrew.args.casks.empty?
       cask_args = []
       cask_args << "--force" if args.force?
       cask_args << "--debug" if args.debug?
       cask_args << "--verbose" if args.verbose?
 
-      ARGV.casks.each do |c|
+      Homebrew.args.casks.each do |c|
         ohai "brew cask install #{c} #{cask_args.join " "}"
         system("#{HOMEBREW_PREFIX}/bin/brew", "cask", "install", c, *cask_args)
       end
@@ -152,7 +152,7 @@ module Homebrew
       end
 
       # --HEAD, fail with no head defined
-      raise "No head is defined for #{f.full_name}" if args.head? && f.head.nil?
+      raise "No head is defined for #{f.full_name}" if args.HEAD? && f.head.nil?
 
       # --devel, fail with no devel defined
       raise "No devel block is defined for #{f.full_name}" if args.devel? && f.devel.nil?
@@ -326,6 +326,7 @@ module Homebrew
     fi.interactive          = args.interactive?
     fi.git                  = args.git?
     fi.prelude
+    fi.fetch
     fi.install
     fi.finish
   rescue FormulaInstallationAlreadyAttemptedError
